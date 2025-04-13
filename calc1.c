@@ -43,6 +43,11 @@ int main()
     printf("Enter your infix expression: ");
     fgets(infix, sizeof(infix), stdin); // Safer than gets()
     infix[strcspn(infix, "\n")] = '\0'; // Remove newline
+	/*    
+	1) strcspn(infix, "\n") - This finds the position of the first newline character (\n) in the string infix. 
+	2) The function strcspn returns the number of characters before the first occurrence of any character in the search set ("\n" in this case).
+    3) infix[...] = '\0' - This assigns a null terminator (\0) at the position found by strcspn, effectively truncating the string at that point.
+	*/
     
     InToPost(infix, postfix);
     printf("\nThe corresponding postfix expression is: %s\n", postfix);
@@ -94,7 +99,7 @@ void InToPost(char infix[],char postfix[])
 		char token =infix[i];
 		
 		//Operand (alphanumeric)
-		if(isalnum(token))
+		if(isdigit(token))
 		{
 			postfix[j++]=token;
 		}
@@ -111,7 +116,6 @@ void InToPost(char infix[],char postfix[])
 			while(top>=0 && stack[top]!=get_matching_open(token))
 			{
 				postfix[j++]=stack[top--];
-				
 			}
 			if (top<0)
 			{
@@ -124,8 +128,10 @@ void InToPost(char infix[],char postfix[])
 		{
 			while(top>=0 && precedence(stack[top])>=precedence(token))
 			{
+				
 				postfix[j++]=stack[top--];
 			}
+			postfix[j++]=' ';
 			stack[++top]=token; 
 		}
 	}
@@ -148,41 +154,50 @@ int eval(char postfix[])
 	int stack[MAX_SIZE];
 	int top=-1;
 	int i;
+	int temp=0;
+	stack[0]=0;
 
     for (int i = 0; postfix[i] != '\0'; i++) {
         char token = postfix[i];
+		printf(" %d ",stack[top]);
         
-        // Skip whitespace
-        if (token == ' ') continue;
+        // Use whitespace to our advantage
+        if (token == ' '){
+			temp=0;
+			++top;
+		}
 		
 		if(isdigit(token))
 		{
-			stack[++top]=token-'0';
+			temp=(temp*10)+(token-'0');
+			stack[++top]=temp;
+			--top;
 		}
 		
 		else if(is_operator(token))
 		{
+			++top;
 			int num2=stack[top--];
 			int num1=stack[top--];
 			
 			switch(token) { // Apply operation
-                case '+': stack[++top] = num1 + num2; break;
-                case '-': stack[++top] = num1 - num2; break;
-                case '*': stack[++top] = num1 * num2; break;
+                case '+': stack[++top] = num1 + num2; --top; break;
+                case '-': stack[++top] = num1 - num2; --top; break;
+                case '*': stack[++top] = num1 * num2; --top; break;
                 case '/': 
 					if(num2==0)
 					{
 						printf("Error Div by Zero");
 						exit(1);
 					}
-					stack[++top] = num1 / num2; 
+					stack[++top] = num1 / num2; --top;
 					break;
-                case '^': stack[++top] = pow(num1, num2); break; // Needs <math.h>
+                case '^': stack[++top] = pow(num1, num2); --top; break; // Needs <math.h>
                 default: 
                     printf("Error: Unknown operator '%c'\n", postfix[i]);
                     exit(1);
 			}
 		}
 	}
-	return stack[top];
+	return stack[++top];
 }
